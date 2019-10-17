@@ -10,6 +10,7 @@ import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.cluster.health.ClusterHealthStatus
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -21,7 +22,7 @@ import javax.validation.constraints.NotNull
 @Validated
 class ElasticsearchConfig {
 
-    private val logger = KotlinLogging.logger {}
+    private val logger = LoggerFactory.getLogger(ElasticsearchConfig::class.java)
 
     @NotNull
     lateinit var url: String
@@ -33,7 +34,7 @@ class ElasticsearchConfig {
         val httpHost = HttpHost.create(url)
         val restClientBuilder = RestClient.builder(httpHost)
         username?.let {
-            logger.debug { "Configuring elasticsearch lib to use basic authentication" }
+            logger.debug ( "Configuring elasticsearch lib to use basic authentication" )
             restClientBuilder.setHttpClientConfigCallback {
                 val basicCredentialsProvider = BasicCredentialsProvider()
                 basicCredentialsProvider.setCredentials(AuthScope.ANY, UsernamePasswordCredentials(username, password))
@@ -45,7 +46,7 @@ class ElasticsearchConfig {
         if (health.status === ClusterHealthStatus.RED) {
             throw IllegalStateException("Elasticsearch cluster in ${health.status} status")
         } else {
-            logger.debug { "Elasticsearch cluster in ${health.status} status" }
+            logger.debug ( "Elasticsearch cluster in ${health.status} status" )
         }
         return restHighLevelClient
     }
