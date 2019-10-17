@@ -6,17 +6,11 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
-class JirasticApplication : ApplicationRunner {
-
-	@Autowired
-    lateinit var synchronizer: Synchronizer
-
-    override fun run(args: ApplicationArguments?) {
-        synchronizer.sync()
-    }
-}
+@EnableScheduling
+class JirasticApplication
 
 fun main(args: Array<String>) {
     runApplication<JirasticApplication>(*args)
