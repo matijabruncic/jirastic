@@ -28,7 +28,7 @@ class Synchronizer {
 
     @Scheduled(fixedDelay = 5*60*1000)
     fun sync() {
-        val response = elasticsearch.get(GetRequest(".jirastic", "config"), RequestOptions.DEFAULT)
+        val response = elasticsearch.get(GetRequest(".jirastic", "_doc", "config"), RequestOptions.DEFAULT)
         for (config in response.source["configs"] as List<*>) {
             try {
                 val hashMap = config as java.util.HashMap<*, *>
@@ -43,13 +43,14 @@ class Synchronizer {
 
     private fun syncConfiguration(configName: String, jiraQuery: String) {
         var tasksFetchedFromJira = 0
+        logger.info("Fetching data from Jira for $configName")
         do {
             //read
-            logger.debug("Fetching data from Jira")
+            logger.debug("Fetching data from Jira for $configName")
             val searchResult = jira.searchClient.searchJql(jiraQuery, null, tasksFetchedFromJira, null).claim()
             val count = StreamSupport.stream(searchResult.issues.spliterator(), false).count().toInt()
             tasksFetchedFromJira += count
-            logger.debug("Fetched $count tasks from Jira")
+            logger.debug("Fetched $count tasks from Jira for $configName")
 
             //map
             logger.debug("Mapping started")
@@ -67,14 +68,16 @@ class Synchronizer {
             elasticsearch.bulk(bulkRequest, RequestOptions.DEFAULT)
             logger.debug("Elasticsearch indexing finished")
         } while (tasksFetchedFromJira < searchResult.total)
+        logger.info("Fetching data from Jira for $configName")
     }
 
     private fun createElasticBulkRequest(listOfElasticsearchDocuments: List<HashMap<String, Any>>): BulkRequest {
-        val bulkRequest = BulkRequest("tasks")
+        val bulkRequest = BulkRequest("tasks", "_doc")
         listOfElasticsearchDocuments.forEach {
             val indexRequest = IndexRequest("tasks")
             indexRequest.id(it["Key"] as String?)
             indexRequest.source(it)
+            indexRequest.type("_doc")
             bulkRequest.add(indexRequest)
         }
         return bulkRequest
