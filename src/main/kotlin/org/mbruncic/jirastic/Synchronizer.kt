@@ -1,6 +1,7 @@
 package org.mbruncic.jirastic
 
 import com.atlassian.jira.rest.client.api.JiraRestClient
+import com.atlassian.jira.rest.client.api.RestClientException
 import com.atlassian.jira.rest.client.api.domain.Issue
 import org.codehaus.jettison.json.JSONArray
 import org.codehaus.jettison.json.JSONObject
@@ -26,7 +27,7 @@ class Synchronizer {
     @Autowired
     lateinit var elasticsearch: RestHighLevelClient
 
-    @Scheduled(fixedDelay = 5*60*1000)
+    @Scheduled(fixedDelay = 5 * 60 * 1000)
     fun sync() {
         val response = elasticsearch.get(GetRequest(".jirastic", "_doc", "config"), RequestOptions.DEFAULT)
         for (config in response.source["configs"] as List<*>) {
@@ -35,7 +36,15 @@ class Synchronizer {
                 val configName = hashMap["name"]
                 val jiraQuery = hashMap["jql"]
                 syncConfiguration(configName as String, jiraQuery as String)
-            } catch (e: Exception){
+            } catch (rce: RestClientException) {
+                if (rce.statusCode.isPresent && rce.statusCode.get() == 403) {
+                    logger.error("Permission denied")
+                } else if (rce.statusCode.isPresent && rce.statusCode.get() == 401) {
+                    logger.error("Authentication error")
+                } else {
+                    logger.error(rce.message)
+                }
+            } catch (e: Exception) {
                 logger.error(e.message)
             }
         }
@@ -58,7 +67,7 @@ class Synchronizer {
             logger.debug("Mapping finished")
 
             //add additional fields to each document
-            listOfElasticsearchDocuments.forEach{
+            listOfElasticsearchDocuments.forEach {
                 it["ConfigName"] = configName
             }
 
@@ -103,7 +112,7 @@ class Synchronizer {
         issue.fields.filter { it.id == "customfield_10900" }.getOrNull(0)?.value?.let { source["Backlog"] = ((it as JSONArray).get(0) as JSONObject).get("value") }
         issue.fields.filter { it.id == "customfield_14300" }.getOrNull(0)?.value?.let { source["Categorization"] = (it as JSONObject).get("value") }
         issue.fields.filter { it.id == "aggregatetimespent" }.getOrNull(0)?.value?.let { source["AggregateTimeSpent"] = it }
-        issue.resolution?.name?.let{ source["Resolution"] = it}
+        issue.resolution?.name?.let { source["Resolution"] = it }
         return source
     }
 }
