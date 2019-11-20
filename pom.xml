@@ -132,6 +132,7 @@
                 <configuration>
                     <to>
                         <image>docker.io/mats990/${project.artifactId}:${project.version}</image>
+                        <image>docker.io/mats990/${project.artifactId}:latest</image>
                     </to>
                 </configuration>
                 <executions>

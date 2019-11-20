@@ -8,3 +8,11 @@ For further reference, please consider the following sections:
 
 ### Docker build
 To successfully build and deploy docker image you should login to docker.io and then execute `jib:build`
+
+If you need to tag docker image with some different tag and push to some other docker registry use: `-Djib.to.image=customDockerImage:customTag` 
+
+### Project build
+Execute `mvn clean install`
+
+### Running
+`docker run -e JIRA_URL=${jira_url} -e JIRA_USERNAME=${jira_username} -e JIRA_PASSWORD=${jira_password} -e ELASTICSEARCH_URL=${elasticsearch_url} --network host mats990/jirastic:latest`
